@@ -82,7 +82,7 @@ def drawPred(classId, conf, left, top, right, bottom):
                 plate_number = reader.readtext(plate_array)
                 concat_number = ' '.join([number[1] for number in plate_number])
                 number_conf = np.mean([number[2] for number in plate_number])
-                print('hello')
+               
                 print(plate_number)
                 print(concat_number)
                 print(number_conf)
