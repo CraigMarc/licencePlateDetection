@@ -83,9 +83,9 @@ def drawPred(classId, conf, left, top, right, bottom):
                 concat_number = ' '.join([number[1] for number in plate_number])
                 number_conf = np.mean([number[2] for number in plate_number])
                
-                print(plate_number)
+                #print(plate_number)
                 print(concat_number)
-                print(number_conf)
+                #print(number_conf)
 
     except Exception as e:
                 print(f"OCR Error: {e}")
@@ -95,7 +95,7 @@ def drawPred(classId, conf, left, top, right, bottom):
     if classes:
         assert(classId < len(classes))
         label = '%s: %s' % (classes[classId], label)
-      
+        print(classes[classId])
     # Display the label at the top of the bounding box
     labelSize, baseLine = cv.getTextSize(
         label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -104,6 +104,16 @@ def drawPred(classId, conf, left, top, right, bottom):
         1.5*labelSize[0]), top + baseLine), (255, 0, 255), cv.FILLED)
     #cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine),    (255, 255, 255), cv.FILLED)
     cv.putText(frame, label, (left, top),
+               cv.FONT_HERSHEY_SIMPLEX, 0.70, (255, 255, 255), 2)
+    
+    # Display the licence number at the top of the bounding box
+    labelSize, baseLine = cv.getTextSize(
+        concat_number, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    top = max(top, labelSize[1])
+    cv.rectangle(frame, ((left), top - round(1.5*labelSize[1])), ((left) + round(
+        1.5*labelSize[0]), top - 60 + baseLine), (255, 0, 255), cv.FILLED)
+    #cv.rectangle(frame, (left, top - round(1.5*labelSize[1])), (left + round(1.5*labelSize[0]), top + baseLine),    (255, 255, 255), cv.FILLED)
+    cv.putText(frame, concat_number, (left, top -30),
                cv.FONT_HERSHEY_SIMPLEX, 0.70, (255, 255, 255), 2)
 
 # Remove the bounding boxes with low confidence using non-maxima suppression
@@ -122,17 +132,18 @@ def postprocess(frame, outs):
     confidences = []
     boxes = []
     for out in outs:
-        print("out.shape : ", out.shape)
+        #print("out.shape : ", out.shape)
         for detection in out:
             # if detection[4]>0.001:
             scores = detection[5:]
             classId = np.argmax(scores)
             # if scores[classId]>confThreshold:
             confidence = scores[classId]
-            if detection[4] > confThreshold:
-                print(detection[4], " - ", scores[classId],
-                      " - th : ", confThreshold)
-                print(detection)
+            
+            #if detection[4] > confThreshold:
+                #print(detection[4], " - ", scores[classId],
+                  #   " - th : ", confThreshold)
+                #print(detection)
             if confidence > confThreshold:
                 center_x = int(detection[0] * frameWidth)
                 center_y = int(detection[1] * frameHeight)
