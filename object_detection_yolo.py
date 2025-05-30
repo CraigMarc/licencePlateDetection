@@ -5,6 +5,11 @@ import argparse
 import sys
 import numpy as np
 import os.path
+import easyocr
+from PIL import Image
+
+# Initialize EasyOCR reader
+reader = easyocr.Reader(['en'], gpu=False)
 
 # Initialize the parameters
 confThreshold = 0.5  # Confidence threshold
@@ -35,6 +40,7 @@ net = cv.dnn.readNetFromDarknet(modelConfiguration, modelWeights)
 net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
 net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
 
+
 # Get the names of the output layers
 
 
@@ -42,8 +48,10 @@ def getOutputsNames(net):
     # Get the names of all the layers in the network
     layersNames = net.getLayerNames()
     # Get the names of the output layers, i.e. the layers with unconnected outputs
-    return [layersNames[i[0] - 1] for i in net.getUnconnectedOutLayers()]
-
+    
+    
+    return [layersNames[i - 1] for i in net.getUnconnectedOutLayers()]
+  
 # Draw the predicted bounding box
 
 
@@ -54,11 +62,40 @@ def drawPred(classId, conf, left, top, right, bottom):
 
     label = '%.2f' % conf
 
+      # Try to apply OCR on detected region
+              # Try to apply OCR on detected region
+    try:
+                # Ensure coordinates are within frame bounds
+                r0 = max(0, left)
+                r1 = max(0, top)
+                r2 = min(frame.shape[1], right)
+                r3 = min(frame.shape[0], bottom)
+
+                # Crop license plate region
+                plate_region = frame[r1:r3, r0:r2]
+
+                # Convert to format compatible with EasyOCR
+                plate_image = Image.fromarray(cv.cvtColor(plate_region, cv.COLOR_BGR2RGB))
+                plate_array = np.array(plate_image)
+
+                # Use EasyOCR to read text from plate
+                plate_number = reader.readtext(plate_array)
+                concat_number = ' '.join([number[1] for number in plate_number])
+                number_conf = np.mean([number[2] for number in plate_number])
+                print('hello')
+                print(plate_number)
+                print(concat_number)
+                print(number_conf)
+
+    except Exception as e:
+                print(f"OCR Error: {e}")
+                pass
+    
     # Get the label for the class name and its confidence
     if classes:
         assert(classId < len(classes))
         label = '%s: %s' % (classes[classId], label)
-
+      
     # Display the label at the top of the bounding box
     labelSize, baseLine = cv.getTextSize(
         label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -111,7 +148,7 @@ def postprocess(frame, outs):
     # lower confidences.
     indices = cv.dnn.NMSBoxes(boxes, confidences, confThreshold, nmsThreshold)
     for i in indices:
-        i = i[0]
+       # i = i
         box = boxes[i]
         left = box[0]
         top = box[1]
@@ -170,7 +207,7 @@ while cv.waitKey(1) < 0:
 
     # Runs the forward pass to get output of the output layers
     outs = net.forward(getOutputsNames(net))
-
+   
     # Remove the bounding boxes with low confidence
     postprocess(frame, outs)
 
